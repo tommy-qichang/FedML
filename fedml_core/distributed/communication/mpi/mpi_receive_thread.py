@@ -15,17 +15,21 @@ class MPIReceiveThread(threading.Thread):
         self.size = size
         self.name = name
         self.q = q
+        self.daemon = True
 
     def run(self):
-        logging.debug("Starting Thread:" + self.name + ". Process ID = " + str(self.rank))
-        while True:
+        logging.debug("Starting RThread:" + self.name + ". Process ID = " + str(self.rank))
+        while not self.stopped():
             try:
                 msg_str = self.comm.recv()
                 msg = Message()
                 msg.init(msg_str)
                 self.q.put(msg)
             except Exception:
+                logging.debug("Exception RThread:" + self.name + ". Process ID = " + str(self.rank))
                 traceback.print_exc()
+                break
+        logging.debug("Ending RThread:" + self.name + ". Process ID = " + str(self.rank))
 
     def stop(self):
         self._stop_event.set()
@@ -43,8 +47,8 @@ class MPIReceiveThread(threading.Thread):
 
     def raise_exception(self):
         thread_id = self.get_id()
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id),
                                                          ctypes.py_object(SystemExit))
         if res > 1:
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
-            print('Exception raise failure')
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
+            raise SystemError("PyThreadState_SetAsyncExc failed")

@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
     wandb.init(
         project="fedml",
-        name="FedAVG-r" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
+        name="FedAVG" + args.dataset + "-r" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
         config=args
     )
 
@@ -299,7 +299,6 @@ if __name__ == "__main__":
     np.random.seed(0)
     torch.manual_seed(0)
     torch.cuda.manual_seed_all(0)
-    torch.backends.cudnn.deterministic = True
 
     # load data
     dataset = load_data(args, args.dataset)

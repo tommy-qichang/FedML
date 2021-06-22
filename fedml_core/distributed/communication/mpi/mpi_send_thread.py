@@ -16,19 +16,23 @@ class MPISendThread(threading.Thread):
         self.size = size
         self.name = name
         self.q = q
+        self.daemon = True
 
     def run(self):
-        logging.debug("Starting " + self.name + ". Process ID = " + str(self.rank))
-        while True:
+        logging.debug("Starting SThread:" + self.name + ". Process ID = " + str(self.rank))
+        while not self.stopped():
             try:
-                if not self.q.empty():
+                if self.q and not self.q.empty():
                     msg = self.q.get()
                     dest_id = msg.get(Message.MSG_ARG_KEY_RECEIVER)
                     self.comm.send(msg.to_string(), dest=dest_id)
                 else:
-                    time.sleep(0.003)
+                    time.sleep(0.3)
             except Exception:
+                logging.debug("Exception SThread:" + self.name + ". Process ID = " + str(self.rank))
                 traceback.print_exc()
+                break
+        logging.debug("Ending SThread:" + self.name + ". Process ID = " + str(self.rank))
 
     def stop(self):
         self._stop_event.set()

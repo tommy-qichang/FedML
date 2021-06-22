@@ -18,11 +18,6 @@ class MpiCommunicationManager(BaseCommunicationManager):
 
         self._observers: List[Observer] = []
 
-        if node_type == "client":
-            self.q_sender, self.q_receiver = self.init_client_communication()
-        elif node_type == "server":
-            self.q_sender, self.q_receiver = self.init_server_communication()
-
         self.server_send_thread = None
         self.server_receive_thread = None
         self.server_collective_thread = None
@@ -30,6 +25,11 @@ class MpiCommunicationManager(BaseCommunicationManager):
         self.client_send_thread = None
         self.client_receive_thread = None
         self.client_collective_thread = None
+
+        if node_type == "client":
+            self.q_sender, self.q_receiver = self.init_client_communication()
+        elif node_type == "server":
+            self.q_sender, self.q_receiver = self.init_server_communication()
 
         self.is_running = True
 
@@ -76,7 +76,9 @@ class MpiCommunicationManager(BaseCommunicationManager):
                 self.notify(msg_params)
 
             time.sleep(0.3)
-        logging.info("!!!!!!handle_receive_message stopped!!!")
+
+        logging.info("[{}] !!!!!!handle_receive_message stopped!!!".format(self.rank))
+        self.stop_receive_message()
 
     def stop_receive_message(self):
         self.is_running = False
@@ -94,5 +96,6 @@ class MpiCommunicationManager(BaseCommunicationManager):
 
     def __stop_thread(self, thread):
         if thread:
-            thread.raise_exception()
-            thread.join()
+            thread.stop()
+            # thread.raise_exception()
+            # thread.join()

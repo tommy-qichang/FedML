@@ -1,10 +1,10 @@
 import logging
 from abc import abstractmethod
-import sys
+
 from mpi4py import MPI
 
-from ..communication.gRPC.grpc_comm_manager import GRPCCommManager
 from ..communication.message import Message
+from ..communication.mock.mock_com_manager import MockCommunicationManager
 from ..communication.mpi.com_manager import MpiCommunicationManager
 from ..communication.mqtt.mqtt_comm_manager import MqttCommManager
 from ..communication.observer import Observer
@@ -20,14 +20,12 @@ class ClientManager(Observer):
         if backend == "MPI":
             self.com_manager = MpiCommunicationManager(comm, rank, size, node_type="client")
         elif backend == "MQTT":
-            HOST = "0.0.0.0"
+            HOST = "81.71.1.31"
             # HOST = "broker.emqx.io"
             PORT = 1883
             self.com_manager = MqttCommManager(HOST, PORT, client_id=rank, client_num=size - 1)
-        elif backend == "GRPC":
-            HOST = "0.0.0.0"
-            PORT = 50000 + rank
-            self.com_manager = GRPCCommManager(HOST, PORT, ip_config_path=args.grpc_ipconfig_path, client_id=rank, client_num=size - 1)
+        elif backend == "MOCK":
+            self.com_manager = MockCommunicationManager()
         else:
             self.com_manager = MpiCommunicationManager(comm, rank, size, node_type="client")
         self.com_manager.add_observer(self)
@@ -64,10 +62,8 @@ class ClientManager(Observer):
         self.message_handler_dict[msg_type] = handler_callback_func
 
     def finish(self):
-        logging.info("__finish server")
+        logging.info("__finish client")
         if self.backend == "MPI":
-            MPI.COMM_WORLD.Abort()
-        elif self.backend == "MQTT":
-            self.com_manager.stop_receive_message()
-        elif self.backend == "GRPC":
-            self.com_manager.stop_receive_message()
+            self.com_manager.is_running = False
+            # self.com_manager.stop_receive_message()
+            # MPI.COMM_WORLD.Abort()
